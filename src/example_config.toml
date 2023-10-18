@@ -1,0 +1,2 @@
+GPGPublicKey  = "GPG_KEY"
+BaseDirectory = "/home/user/.passwords"
