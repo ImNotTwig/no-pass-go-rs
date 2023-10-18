@@ -36,7 +36,7 @@ fn open_file(filepath: String) -> Result<File, String> {
 
 // Open and parse the tree database file (<BaseDirectory>/pass_tree.asc)
 fn parse_tree_file(config: &Config) -> Result<TreeDataBase, String> {
-    // if the tree database file does not exist, create it, and write and encrypted empty string to it
+    // if the tree database file does not exist, create it, and write an encrypted empty string to it
     if !Path::new(&format!("{}/pass_tree.asc", config.base_directory)).exists() {
         let mut pass_tree_file = open_file(format!("{}/pass_tree.asc", config.base_directory))?;
 
