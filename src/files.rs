@@ -34,7 +34,9 @@ fn open_file(filepath: String) -> Result<File, String> {
     }
 }
 
+// Open and parse the tree database file (<BaseDirectory>/pass_tree.asc)
 fn parse_tree_file(config: &Config) -> Result<TreeDataBase, String> {
+    // if the tree database file does not exist, create it, and write and encrypted empty string to it
     if !Path::new(&format!("{}/pass_tree.asc", config.base_directory)).exists() {
         let mut pass_tree_file = open_file(format!("{}/pass_tree.asc", config.base_directory))?;
 
@@ -48,6 +50,8 @@ fn parse_tree_file(config: &Config) -> Result<TreeDataBase, String> {
         .to_string();
 
     let mut treedb = TreeDataBase::new();
+    // for every line, parse the line into an entry in the TreeDataBase HashMap
+    // The lines are formatted as "<account_path>:<account_path_hash>"
     for string in tree_database.split('\n') {
         if string == "" {
             continue;
@@ -59,7 +63,9 @@ fn parse_tree_file(config: &Config) -> Result<TreeDataBase, String> {
     return Ok(treedb);
 }
 
+// Write a TreeDataBase HashMap to the tree database file (<BaseDirectory>/pass_tree.asc)
 fn write_tree_file(config: &Config, treedb: TreeDataBase) -> Result<(), String> {
+    // Collect all the entries in the TreeDataBase HashMap into a single multiline string
     let mut treedb_string = String::new();
     for (hash, path) in &treedb {
         treedb_string += &(path.to_string() + ":" + hash);
@@ -75,6 +81,7 @@ fn write_tree_file(config: &Config, treedb: TreeDataBase) -> Result<(), String> 
     }
 }
 
+// Remove an entry from the tree database file (<BaseDirectory>/pass_tree.asc)
 pub fn remove_from_tree_file(config: &Config, path: String) -> Result<(), String> {
     let mut treedb = parse_tree_file(&config)?;
     treedb.remove(&digest(path));
@@ -82,6 +89,7 @@ pub fn remove_from_tree_file(config: &Config, path: String) -> Result<(), String
     Ok(())
 }
 
+// Add an entry to the tree database file (<BaseDirectory>/pass_tree.asc)
 pub fn add_to_tree_file(config: &Config, path: String) -> Result<(), String> {
     let mut treedb = parse_tree_file(&config)?;
     treedb.insert(digest(&path), path);
@@ -90,6 +98,7 @@ pub fn add_to_tree_file(config: &Config, path: String) -> Result<(), String> {
     Ok(())
 }
 
+// return a multiline string of the plaintext tree database file (<BaseDirectory>/pass_tree.asc)
 pub fn list_accounts(config: &Config) -> Result<String, String> {
     let treedb = parse_tree_file(&config)?;
     let mut treedb_string = String::new();
@@ -100,7 +109,8 @@ pub fn list_accounts(config: &Config) -> Result<String, String> {
     Ok(treedb_string)
 }
 
-pub fn add_account(config: &Config, account: Account, account_path: String) -> Result<(), String> {
+// Write a new account to file
+pub fn create_account_file(config: &Config, account: Account, account_path: String) -> Result<(), String> {
     let account_path = digest(account_path);
 
     let mut account_file =
@@ -117,6 +127,7 @@ pub fn add_account(config: &Config, account: Account, account_path: String) -> R
     Ok(())
 }
 
+// Remove an account from file
 pub fn remove_account(config: &Config, account_path: String) -> Result<(), String> {
     let account_path = digest(account_path);
     open_and_truncate_file(format!("{}/{}", config.base_directory, account_path))?;
@@ -127,32 +138,34 @@ pub fn remove_account(config: &Config, account_path: String) -> Result<(), Strin
     }
 }
 
+// Move an account from one file to another
 pub fn move_account(
     config: &Config,
     old_account_path: String,
     new_account_path: String,
 ) -> Result<(), String> {
     if let Ok(account) = open_account(config, old_account_path.to_owned()) {
-        add_account(config.to_owned(), account, new_account_path.to_owned())?;
+        create_account_file(config.to_owned(), account, new_account_path.to_owned())?;
         add_to_tree_file(config, new_account_path)?;
+
         remove_account(config.to_owned(), old_account_path.to_owned())?;
         remove_from_tree_file(config.to_owned(), old_account_path)?;
     };
     Ok(())
 }
 
+// Edit an account in-place
 pub fn edit_account(config: &Config, account_path: String) -> Result<(), String> {
     let editor = match env::var("EDITOR") {
         Ok(editor) => editor,
         Err(err) => return Err(err.to_string()),
     };
 
+    // Write the pre edited account to a temporary file
     let pre_edit_account = open_account(config, account_path.to_owned())?;
-
-    add_account(config, pre_edit_account, "temp".to_string())?;
+    create_account_file(config, pre_edit_account, "temp".to_string())?;
 
     let hashed_temp = format!("{}/{}", config.base_directory, digest("temp".to_string()));
-
     let decr_temp = decr(hashed_temp.to_owned())?;
 
     let mut temp_file = open_and_truncate_file(hashed_temp.to_owned())?;
@@ -162,6 +175,7 @@ pub fn edit_account(config: &Config, account_path: String) -> Result<(), String>
         Err(err) => return Err(err.to_string()),
     }
 
+    // Open the temp file in $EDITOR
     _ = Command::new(editor.to_owned())
         .arg(hashed_temp.to_owned())
         .spawn()
@@ -179,11 +193,17 @@ pub fn edit_account(config: &Config, account_path: String) -> Result<(), String>
     }
 
     let temp_account = open_account(config.to_owned(), "temp".to_string()).unwrap();
-    add_account(config.to_owned(), temp_account, account_path)?;
+    create_account_file(config.to_owned(), temp_account, account_path)?;
+
+    match fs::remove_file(hashed_temp) {
+        Ok(_) => {},
+        Err(err) => return Err(err.to_string()),
+    }
 
     Ok(())
 }
 
+// Open and return an account from file
 pub fn open_account(config: &Config, account_path: String) -> Result<Account, String> {
     let account_path = format!("{}/{}", config.base_directory, digest(account_path));
 

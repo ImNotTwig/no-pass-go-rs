@@ -93,7 +93,7 @@ fn main() {
     match &cli.command {
         // Add Subcommand
         Some(Commands::Add(account)) => {
-            match add_account(
+            match create_account_file(
                 &config,
                 Account {
                     password: account.password.to_owned(),
