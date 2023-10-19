@@ -31,7 +31,7 @@ Here is a [guide](https://access.redhat.com/documentation/en-us/red_hat_enterpri
 to build and install the program after installing Rust and setting up your config file:
 ```sh
 git clone https://github.com/ImNotTwig/no-pass-go-rs
-cd no-pass-go
+cd no-pass-go-rs
 cargo build --release
 cp target/release/npg .local/bin/npg
 ```
