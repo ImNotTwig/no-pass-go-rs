@@ -68,7 +68,7 @@ fn write_tree_file(config: &Config, treedb: TreeDataBase) -> Result<(), String> 
     // Collect all the entries in the TreeDataBase HashMap into a single multiline string
     let mut treedb_string = String::new();
     for (hash, path) in &treedb {
-        treedb_string += &(path.to_string() + ":" + hash);
+        treedb_string += &(path.to_string() + ":" + hash + "\n");
     }
 
     let mut tree_file = open_and_truncate_file(format!("{}/pass_tree.asc", config.base_directory))?;
@@ -92,8 +92,8 @@ pub fn remove_from_tree_file(config: &Config, path: String) -> Result<(), String
 // Add an entry to the tree database file (<BaseDirectory>/pass_tree.asc)
 pub fn add_to_tree_file(config: &Config, path: String) -> Result<(), String> {
     let mut treedb = parse_tree_file(&config)?;
+    println!("{:?}", path);
     treedb.insert(digest(&path), path);
-    println!("{:?}", treedb);
     write_tree_file(&config, treedb)?;
     Ok(())
 }
@@ -110,7 +110,11 @@ pub fn list_accounts(config: &Config) -> Result<String, String> {
 }
 
 // Write a new account to file
-pub fn create_account_file(config: &Config, account: Account, account_path: String) -> Result<(), String> {
+pub fn create_account_file(
+    config: &Config,
+    account: Account,
+    account_path: String,
+) -> Result<(), String> {
     let account_path = digest(account_path);
 
     let mut account_file =
@@ -120,7 +124,7 @@ pub fn create_account_file(config: &Config, account: Account, account_path: Stri
         serde_json::to_string(&account).expect("Could not parse account into json");
     let encr_account_string = encr_string_and_output(account_string, &config).unwrap();
 
-    match account_file.write(&encr_account_string.trim().as_bytes()) {
+    match account_file.write(&encr_account_string.as_bytes()) {
         Ok(_) => {}
         Err(err) => return Err(err.to_string()),
     }
@@ -196,7 +200,7 @@ pub fn edit_account(config: &Config, account_path: String) -> Result<(), String>
     create_account_file(config.to_owned(), temp_account, account_path)?;
 
     match fs::remove_file(hashed_temp) {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(err) => return Err(err.to_string()),
     }
 

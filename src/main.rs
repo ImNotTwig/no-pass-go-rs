@@ -2,6 +2,7 @@ use accounts::Account;
 use clap::{Args, Parser, Subcommand};
 use config::get_config;
 use files::*;
+use std::process::{Command, Stdio};
 
 mod accounts;
 mod config;
@@ -80,7 +81,11 @@ struct Edit {
 }
 
 #[derive(Args, Debug)]
-struct List {}
+struct List {
+    #[clap(short = 't', long = "tree", action)]
+    #[arg(help = "Do you want to list the files in a tree?")]
+    tree: bool,
+}
 
 fn main() {
     let cli = Cli::parse();
@@ -107,6 +112,7 @@ fn main() {
                     panic!("{}", err);
                 }
                 Ok(_) => {
+                    println!("{}", account.path);
                     match add_to_tree_file(&config, account.path.to_owned()) {
                         Ok(_) => {}
                         Err(err) => {
@@ -178,19 +184,42 @@ fn main() {
         }
 
         // List Subcommand
-        Some(Commands::List(_)) => match list_accounts(&config) {
+        Some(Commands::List(args)) => match list_accounts(&config) {
             Err(err) => {
                 panic!("{}", err);
             }
-            Ok(path_string) => {
-                for string in path_string.split("\n") {
-                    let path: Vec<&str> = string.split(":").collect();
-                    if path[0] == "" {
-                        continue;
+            Ok(path_string) => match args.tree {
+                true => {
+                    let mut path_string_without_hash = "".to_string();
+                    for string in path_string.split("\n") {
+                        let path: Vec<&str> = string.split(":").collect();
+                        if path[0] == "" {
+                            continue;
+                        }
+                        path_string_without_hash += &(path[0].to_string() + "\n");
                     }
-                    println!("{}", path[0]);
+                    let cmd = Command::new("echo")
+                        .arg(&path_string_without_hash)
+                        .stdout(Stdio::piped())
+                        .spawn()
+                        .unwrap();
+
+                    Command::new("tree")
+                        .arg("--fromfile")
+                        .stdin(cmd.stdout.unwrap())
+                        .spawn()
+                        .unwrap();
                 }
-            }
+                false => {
+                    for string in path_string.split("\n") {
+                        let path: Vec<&str> = string.split(":").collect();
+                        if path[0] == "" {
+                            continue;
+                        }
+                        println!("{}", path[0]);
+                    }
+                }
+            },
         },
         _ => {}
     }
