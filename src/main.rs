@@ -11,9 +11,9 @@ mod files;
 
 #[derive(Parser, Debug)]
 #[command(
+    name = "npg",
     about = r"A Password manager written in Rust, storing in encrypted json, following the post-unix philopshy."
 )]
-#[command(name = "npg")]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
