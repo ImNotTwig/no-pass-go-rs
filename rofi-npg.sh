@@ -1,11 +1,13 @@
-#!/bin/dash
+#!/bin/sh
+
+/home/ly/.local/bin/npg list
 
 ACCOUNT_PATH="$(/home/ly/.local/bin/npg list | fuzzel --dmenu )"
 if [ -z "$ACCOUNT_PATH" ]; then
 	return
 fi
 
-OPTION="$(echo "autotype\npassword\nusername\nemail" | fuzzel --dmenu)"
+OPTION="$(printf "autotype\npassword\nusername\nemail" | fuzzel --dmenu)"
 if [ -z "$OPTION" ]; then
 	return
 fi
