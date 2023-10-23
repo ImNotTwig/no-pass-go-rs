@@ -92,7 +92,6 @@ pub fn remove_from_tree_file(config: &Config, path: String) -> Result<(), String
 // Add an entry to the tree database file (<BaseDirectory>/pass_tree.asc)
 pub fn add_to_tree_file(config: &Config, path: String) -> Result<(), String> {
     let mut treedb = parse_tree_file(&config)?;
-    println!("{:?}", path);
     treedb.insert(digest(&path), path);
     write_tree_file(&config, treedb)?;
     Ok(())
