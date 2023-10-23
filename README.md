@@ -35,3 +35,6 @@ cd no-pass-go-rs
 cargo build --release
 cp target/release/npg .local/bin/npg
 ```
+
+The `rofi-npg.sh` script is a script to incorporate this program (npg) with a run launcher (rofi, wofi, fuzzel, dmenu, etc). This script is HARDCODED with `fuzzel`, `doas ydotool`, and my path to the `npg` binary.
+You need to replace the references to these with your own run launcher, input automation tool, and a path to the binary for `npg`
