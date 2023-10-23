@@ -1,7 +1,5 @@
 #!/bin/dash
 
-# get a list of accounts from npg
-
 ACCOUNT_PATH="$(/home/ly/.local/bin/npg list | fuzzel --dmenu )"
 if [ -z "$ACCOUNT_PATH" ]; then
 	return
