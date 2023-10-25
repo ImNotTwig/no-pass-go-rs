@@ -1,0 +1,42 @@
+#+title: No Pass Go
+#+STARTUP: showall
+
+* Password Manager (npg)
+No Pass Go is a password/account manager written in rust, inspired by [[https://www.passwordstore.org][pass
+]]
+I jokingly call No Pass Go the standard post-Unix password manager, because as I see it, its an extension of the concept of pass, and this fixes a few issues of pass that I saw.
+The name is a reference to the Monopoly board game phrase: "Do not pass Go; do not collect $200."
+
+/Filepath arguments given to this program should be relative to the account store folder./
+/If the filepath to the account file is/ ~~/.passwords/email/google.com/username~, /then you only need to provide `email/google.com/username` as an argument/
+
+** Essential npg commands
+/Other commands are provided but the below commands are all you need to use this program./
+1. ~npg show~ shows the password, and optionally the metadata of a given account folder e.g. ~email/google.com/username~ as an argument.
+2. ~npg add~ adds an account to the store, it requires a password and a filepath as arguments.
+3. ~npg remove~ removes an account from the store, you only need to provide the filepath.
+
+** Some features of npg
++ It stores metadata for you, including usernames, emails, and service names (websites).
++ The metadata/password is stored in a ~json~ format before it's encrypted.
++ The accounts are stored individually in their own files, the names of which are the hashes of the filepath given.
++ The filepaths are stored in an encrypted index file called ~pass_tree.asc~. Each filepath has its own line, and are formatted as ~path/to/accountFile:hash_of_filepath~.
+
+** Some cons of npg
++ Since ~pass_tree.asc~ is encrypted, that means you have to decrypt it to list all the password paths, and this means that you have to put in your private GPG key /before/ showing the paths in, say, a rofi script.
++ It only works on Unix-like systems, because of the way different things are handled, such as shell commands, or filepaths.
++ This program is only a CLI, which means you can script it, but it doesn't have first party GUI support, which some people may not like.
+
+** Building and Installing
+/You need the rust compiler to run this program./
+/A universal install guide is available [[https://rustup.rs/#][here]]/
+
+After you have rust installed, rename ~example_config.toml~ to ~config.toml~ and replace the fields in the file with your public GPG key, and the directory where you want the store to be. Then move ~config.toml~ to ~~/.config/npg/config.toml~.
+
+I recommend installing this program to ~~/.local/bin~, as show below
+#+begin_src sh
+git clone https://github.com/ImNotTwig/no-pass-go-rs
+cd no-pass-go-rs
+cargo build --release
+cp ./target/release/npg ~/.local/bin
+#+end_src
